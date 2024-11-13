@@ -31,7 +31,7 @@ class ViaLightingAPI:
         """
         Initialize the API (find the device)
         :param vid: vendor id
-        :param pid: product id
+        :param pid: product id (can be None if vendor id can uniquely identify the keyboard)
         """
         self.device_path = self.__find_device_path(vid, pid)
         if self.device_path is None:
