@@ -1,26 +1,23 @@
+"""
+A Python API that encapsulates VIA lighting control,
+following the VIA version 12 protocol.
+"""
+
 import hid
 import colorsys
 
-"""
-Global constants
-"""
+"""Global constants"""
 VIA_INTERFACE_NUM = 1
 RAW_HID_BUFFER_SIZE = 32
 
-"""
-VIA commands
-"""
+"""VIA commands"""
 CUSTOM_SET_VALUE = 7
 CUSTOM_SAVE = 9
 
-"""
-VIA channels
-"""
+"""VIA channels"""
 CHANNEL_RGB_MATRIX = 3
 
-"""
-VIA rgb matrix entries
-"""
+"""VIA rgb matrix entries"""
 RGB_MATRIX_VALUE_BRIGHTNESS = 1
 RGB_MATRIX_VALUE_EFFECT = 2
 RGB_MATRIX_VALUE_EFFECT_SPEED = 3
@@ -31,12 +28,22 @@ class ViaLightingAPI:
     device_path = None
 
     def __init__(self, vid, pid):
-        self.device_path = self.find_device(vid, pid)
+        """
+        Initialize the API (find the device)
+        :param vid: vendor id
+        :param pid: product id
+        """
+        self.device_path = self.__find_device_path(vid, pid)
         if self.device_path is None:
             raise self.DeviceNotFoundError(f"Device not found or does not support VIA.")
 
-    @staticmethod
-    def find_device(vendor_id, product_id):
+    def __find_device_path(self, vendor_id, product_id):
+        """
+        Find the device by vendor id and product id
+        :param vendor_id: vendor id
+        :param product_id: product id
+        :return: path of the device
+        """
         for device_dict in hid.enumerate():
             if device_dict['vendor_id'] == vendor_id:
                 if product_id is None or device_dict['product_id'] == product_id:
@@ -44,15 +51,99 @@ class ViaLightingAPI:
                         return device_dict['path']
         return None
 
-    # def
+    def _send(self, data):
+        """
+        Filling then sending the command to device via HI
+        :param data: command bytes (array)
+        :return: None
+        """
+        padded_data = data + [0] * (RAW_HID_BUFFER_SIZE - len(data))
+        h = hid.device()
+        h.open_path(self.device_path)
+        try:
+            h.write(padded_data)
+        finally:
+            h.close()
 
-    @staticmethod
-    def rgb_to_hsv(r, g, b):
-        r_normalized = r / 255.0
-        g_normalized = g / 255.0
-        b_normalized = b / 255.0
-        h, s, v = colorsys.rgb_to_hsv(r_normalized, g_normalized, b_normalized)
-        return h, s, v
+    def set_brightness(self, brightness):
+        """
+        Set lighting brightness
+        :param brightness: target brightness (0-255)
+        :return: None
+        """
+        command = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_BRIGHTNESS, brightness]
+        self._send(command)
+
+    def set_effect(self, effect):
+        """
+        Set lighting effect\n
+        Commonly used effects by QMK default:\n
+        0 - All off\n
+        1 - Solid color\n
+        5 - Breathing\n
+        6 - Band Sat.\n
+        7 - Band Val.\n
+        12 - Cycle All\n
+        13 - Cycle Left/Right\n
+        14 - Cycle Up/Down\n
+        15 - Rainbow Moving Chevron\n
+        41 - Splash\n
+        :param effect: target effect (0-44)
+        :return: None
+        """
+        command = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_EFFECT, effect]
+        self._send(command)
+
+    def set_effect_speed(self, speed):
+        """
+        Set the speed of lighting effect
+        :param speed: target speed (0-255)
+        :return: None
+        """
+        command = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_EFFECT_SPEED, speed]
+        self._send(command)
+
+    def set_color(self, color):
+        """
+        Set lighting color, RGB and HSV formats supported
+        :param color: [R, G, B] or [H, S]
+        :return: None
+        """
+        hue, sat = None, None
+        color_len = len(color)
+        if color_len == 3:
+            """RBG format"""
+            hue, sat = self.__rgb_to_hsv(color)[:2]
+        elif color_len == 2:
+            """HSV format"""
+            hue, sat = color
+        command = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_COLOR, hue, sat]
+        self._send(command)
+
+    def set_color_abs(self, color):
+        """
+        Set absolute lighting color (adjust both HS color and brightness), RGB format supported\n
+        The effect will be better only if your keyboard switch has a light-guiding design or
+        the color saturation of the switch is low, because the color displayed will be greatly biased
+        towards the color of the switch when the light brightness is low.
+        You can also add a color bias yourself to calibrate the displayed color.
+        :param color: [R, G, B]
+        :return: None
+        """
+        hue, sat, val = self.__rgb_to_hsv(color)
+        command_color = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_COLOR, hue, sat]
+        command_brightness = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_BRIGHTNESS, val]
+        self._send(command_color)
+        self._send(command_brightness)
+
+    def __rgb_to_hsv(self, rgb):
+        """
+        Convert RGB to HSV
+        :param rgb: [red (0-255), green (0-255), blue (0-255)]
+        :return: HSV values
+        """
+        h, s, v = colorsys.rgb_to_hsv(*[value / 255.0 for value in rgb])
+        return int(h * 255), int(s * 255), int(v * 255)
 
     class DeviceNotFoundError(Exception):
         pass

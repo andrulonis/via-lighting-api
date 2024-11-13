@@ -1,2 +1,2 @@
 # via-lighting-api
-A Python API that encapsulates VIA lighting control, based on the latest VIA 12 version protocol.
+A Python API that encapsulates VIA lighting control, following the latest VIA version 12 protocol.
