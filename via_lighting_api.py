@@ -35,9 +35,10 @@ class ViaLightingAPI:
         """
         self.device_path = self.__find_device_path(vid, pid)
         if self.device_path is None:
-            raise self.DeviceNotFoundError(f"Device not found or does not support VIA.")
+            raise self.DeviceNotFoundError("Device not found or does not support VIA.")
 
-    def __find_device_path(self, vendor_id, product_id):
+    @staticmethod
+    def __find_device_path(vendor_id, product_id):
         """
         Find the device by vendor id and product id
         :param vendor_id: vendor id
@@ -53,7 +54,12 @@ class ViaLightingAPI:
 
     def _send(self, data):
         """
-        Filling then sending the command to device via HI
+        Filling then sending the command to device via HID\n
+        Warning:\n
+        This function is not recommended.
+        It will send the command directly to your device,
+        which may cause unexpected result.
+        Make sure you fully understand the meaning of the command before sending it.
         :param data: command bytes (array)
         :return: None
         """
@@ -136,7 +142,16 @@ class ViaLightingAPI:
         self._send(command_color)
         self._send(command_brightness)
 
-    def __rgb_to_hsv(self, rgb):
+    def save(self):
+        """
+        Save current lighting settings to EEPROM
+        :return: None
+        """
+        command = [CUSTOM_SAVE, CHANNEL_RGB_MATRIX]
+        self._send(command)
+
+    @staticmethod
+    def __rgb_to_hsv(rgb):
         """
         Convert RGB to HSV
         :param rgb: [red (0-255), green (0-255), blue (0-255)]
