@@ -14,7 +14,12 @@ This Python API provides an interface for controlling the RGB lighting of keyboa
 ## Requirements
 
 - Python 3.x
-- `hid` library (install with `pip3 install -r requirements.txt` or `pip3 install hidapi`)
+
+## Installation
+
+```shell
+pip install via-lighting-api
+```
 
 ## Usage
 
@@ -28,7 +33,7 @@ First, import the `ViaLightingAPI` class from the module where it’s defined:
 from via_lighting_api import ViaLightingAPI
 ```
 
-To initialize the API and control the lighting, you need to know the Vendor ID (VID) and Product ID (PID) of your keyboard. If you don't know these values, run the viewer tool: `python3 tools/keyboard_info_viewer.py` and follow the hint to find them.
+To initialize the API and control the lighting, you need to know the Vendor ID (VID) and Product ID (PID) of your keyboard. If you don't know these values, run: `via-lighting-api --list-devices` and follow the hint to find them.
 
 ```python
 # Replace with your keyboard's VID and PID

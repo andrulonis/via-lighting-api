@@ -5,8 +5,11 @@ following the VIA version 12 protocol.
 
 import hid
 import colorsys
+import argparse
+from tools.keyboard_info_viewer import list_devices
 
 """Global constants"""
+VERSION_NUM = '0.2.0'
 VIA_INTERFACE_NUM = 1
 RAW_HID_BUFFER_SIZE = 32
 
@@ -162,3 +165,15 @@ class ViaLightingAPI:
 
     class DeviceNotFoundError(Exception):
         pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description='VIA lighting API')
+    parser.add_argument('-v', '--version', action='version', version=VERSION_NUM)
+    parser.add_argument('--list-devices', action='store_true',
+                        help="helps you find your keyboard's vendor id and product id")
+    args = parser.parse_args()
+    if args.list_devices:
+        list_devices()
+    else:
+        print("Please use --list-devices to find your keyboard's vendor id and product id.")
