@@ -9,7 +9,7 @@ import argparse
 from tools.keyboard_info_viewer import list_devices
 
 """Global constants"""
-VERSION_NUM = '0.2.0'
+VERSION_NUM = '0.2.1'
 VIA_INTERFACE_NUM = 1
 RAW_HID_BUFFER_SIZE = 32
 
@@ -29,6 +29,9 @@ RGB_MATRIX_VALUE_COLOR = 4
 
 class ViaLightingAPI:
     device_path = None
+
+    """Color correction factor"""
+    cor = None
 
     def __init__(self, vid, pid):
         """
@@ -135,11 +138,12 @@ class ViaLightingAPI:
         The effect will be better only if your keyboard switch has a light-guiding design or
         the color saturation of the switch is low, because the color displayed will be greatly biased
         towards the color of the switch when the light brightness is low.
-        You can also add a color bias yourself to calibrate the displayed color.
+        If not, try out the color correction function.
         :param color: [R, G, B]
         :return: None
         """
-        hue, sat, val = self.__rgb_to_hsv(color)
+        hue, sat, val = self.__rgb_to_hsv(
+            [color[i] / self.cor[i] for i in range(len(color))]) if self.cor else self.__rgb_to_hsv(color)
         command_color = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_COLOR, hue, sat]
         command_brightness = [CUSTOM_SET_VALUE, CHANNEL_RGB_MATRIX, RGB_MATRIX_VALUE_BRIGHTNESS, val]
         self._send(command_color)
@@ -165,6 +169,26 @@ class ViaLightingAPI:
 
     class DeviceNotFoundError(Exception):
         pass
+
+    def set_color_correction(self, true_white):
+        """
+        Enable color correction, which is useful when your keyboard switches do not have light guide designs,
+        or they have highly saturated colors, and you want them to display accurate colors.
+        To use it, you first need to test the RGB values of the light settings when your keyboard displays true white.\n
+        This algorithm only applies to **set_color_abs()**.
+        :param true_white: [red (0-255), green (0-255), blue (0-255)]
+               - RGB value when the keyboard light displays a true white color
+        :return: None
+        """
+        if isinstance(true_white, list) and len(true_white) == 3:
+            self.cor = [255 / value for value in true_white]
+
+    def disable_color_correction(self):
+        """
+        Disable color calibration
+        :return: None
+        """
+        self.cor = None
 
 
 def main():

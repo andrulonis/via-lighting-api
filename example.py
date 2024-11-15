@@ -30,7 +30,11 @@ try:
     api.set_color([170, 255])
     time.sleep(1)
 
-    api.set_color_abs([127, 127, 0])
+    api.set_color_abs([254, 150, 51])
+    time.sleep(1)
+
+    api.set_color_correction([150, 240, 60])
+    api.set_color_abs([254, 150, 51])
     time.sleep(1)
 
     api.save()
