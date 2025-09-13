@@ -1,5 +1,7 @@
 # via-lighting-api
 
+**This is an extended version of the via-lighting-api package that adds support for different operating systems. Key change is designed to make Windows machines work due to the HID protocol for VIA being different in Windows compared to e.g. Linux (issues showing this behaviour available [here](https://github.com/signal11/hidapi/issues/255) and [here](https://github.com/libusb/hidapi/issues/589)). Original package is available [here](https://pypi.org/project/via-lighting-api/).**
+
 This Python API provides an interface for controlling the RGB lighting of keyboards that support the VIA protocol. It
 allows you to dynamically change the brightness, effect, effect speed, and color of the lighting.
 
